@@ -344,7 +344,7 @@ distroCheck() {
     #PLAT="$(lsb_release -si)"
     PLAT="Raspbian"
     #OSCN="$(lsb_release -sc)"
-    OSCN="bullseye"
+    OSCN="buster"
   else # else get info from os-release
     . /etc/os-release
     PLAT="$(awk '{print $1}' <<< "${NAME}")"
@@ -1987,7 +1987,7 @@ installWireGuard() {
 
     if [[ "${WIREGUARD_BUILTIN}" -eq 0 ]]; then
       # Explicitly install the module if not built-in
-      PIVPN_DEPS+=(wireguard wireguard-dkms wireguard-tools)
+      PIVPN_DEPS+=(linux-headers-amd64 wireguard-dkms)
     fi
   elif [[ "${PLAT}" == "Ubuntu" ]]; then
     echo "..."
