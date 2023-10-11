@@ -158,8 +158,7 @@ main() {
       setStaticIPv4
     fi
   else
-    #staticIpNotSupported
-    setStaticIPv4
+    staticIpNotSupported
   fi
 
   chooseUser
