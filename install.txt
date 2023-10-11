@@ -158,7 +158,8 @@ main() {
       setStaticIPv4
     fi
   else
-    staticIpNotSupported
+    #staticIpNotSupported
+    setStaticIPv4
   fi
 
   chooseUser
@@ -342,9 +343,9 @@ distroCheck() {
   # if lsb_release command is on their system
   if command -v lsb_release > /dev/null; then
     #PLAT="$(lsb_release -si)"
-    PLAT="Raspbian"
+    PLAT="Debian"
     #OSCN="$(lsb_release -sc)"
-    OSCN="buster"
+    OSCN="bullseye"
   else # else get info from os-release
     . /etc/os-release
     PLAT="$(awk '{print $1}' <<< "${NAME}")"
