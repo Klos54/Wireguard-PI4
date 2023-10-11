@@ -341,7 +341,8 @@ distroCheck() {
   # distroCheck, maybeOSSupport, noOSSupport
   # if lsb_release command is on their system
   if command -v lsb_release > /dev/null; then
-    PLAT="$(lsb_release -si)"
+    #PLAT="$(lsb_release -si)"
+    PLAT="Raspbian"
     OSCN="$(lsb_release -sc)"
   else # else get info from os-release
     . /etc/os-release
