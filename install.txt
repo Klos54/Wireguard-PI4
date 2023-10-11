@@ -1651,6 +1651,8 @@ installPiVPN() {
   askWhichVPN
   setVPNDefaultVars
 
+  VPN='wireguard'
+
   if [[ "${VPN}" == 'openvpn' ]]; then
     setOpenVPNDefaultVars
     askAboutCustomizing
