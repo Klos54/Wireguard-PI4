@@ -1987,7 +1987,7 @@ installWireGuard() {
 
     if [[ "${WIREGUARD_BUILTIN}" -eq 0 ]]; then
       # Explicitly install the module if not built-in
-      PIVPN_DEPS+=(linux-headers-amd64 wireguard-dkms)
+      PIVPN_DEPS+=(wireguard wireguard-dkms wireguard-tools)
     fi
   elif [[ "${PLAT}" == "Ubuntu" ]]; then
     echo "..."
