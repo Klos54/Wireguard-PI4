@@ -150,16 +150,18 @@ main() {
 
   chooseInterface
 
-  if checkStaticIpSupported; then
-    getStaticIPv4Settings
+  setStaticIPv4
 
-    if [[ -z "${dhcpReserv}" ]] \
-      || [[ "${dhcpReserv}" -ne 1 ]]; then
-      setStaticIPv4
-    fi
-  else
-    staticIpNotSupported
-  fi
+  #if checkStaticIpSupported; then
+  #  getStaticIPv4Settings
+#
+#    if [[ -z "${dhcpReserv}" ]] \
+#      || [[ "${dhcpReserv}" -ne 1 ]]; then
+#      setStaticIPv4
+#    fi
+#  else
+#    staticIpNotSupported
+#  fi
 
   chooseUser
   cloneOrUpdateRepos
