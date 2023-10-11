@@ -343,7 +343,8 @@ distroCheck() {
   if command -v lsb_release > /dev/null; then
     #PLAT="$(lsb_release -si)"
     PLAT="Raspbian"
-    OSCN="$(lsb_release -sc)"
+    #OSCN="$(lsb_release -sc)"
+    OSCN="bullseye"
   else # else get info from os-release
     . /etc/os-release
     PLAT="$(awk '{print $1}' <<< "${NAME}")"
@@ -1838,7 +1839,100 @@ writeWireguardTempVarsFile() {
 }
 
 askWhichVPN() {
-  VPN="wireguard"
+  if [[ "${runUnattended}" == 'true' ]]; then
+    if [[ "${WIREGUARD_SUPPORT}" -eq 1 ]]; then
+      if [[ -z "${VPN}" ]]; then
+        echo ":: No VPN protocol specified, using WireGuard"
+        VPN="wireguard"
+      else
+        VPN="${VPN,,}"
+
+        if [[ "${VPN}" == "wireguard" ]]; then
+          echo "::: WireGuard will be installed"
+        elif [[ "${VPN}" == "openvpn" ]]; then
+          echo "::: OpenVPN will be installed"
+        else
+          err ":: ${VPN} is not a supported VPN protocol, please specify 'wireguard' or 'openvpn'"
+          exit 1
+        fi
+      fi
+    else
+      if [[ -z "${VPN}" ]]; then
+        echo ":: No VPN protocol specified, using OpenVPN"
+        VPN="openvpn"
+      else
+        VPN="${VPN,,}"
+
+        if [[ "${VPN}" == "openvpn" ]]; then
+          echo "::: OpenVPN will be installed"
+        else
+          err ":: ${VPN} is not a supported VPN protocol on ${DPKG_ARCH} ${PLAT}, only 'openvpn' is"
+          exit 1
+        fi
+      fi
+    fi
+  else
+    if [[ "${WIREGUARD_SUPPORT}" -eq 1 ]] \
+      && [[ "${OPENVPN_SUPPORT}" -eq 1 ]]; then
+      chooseVPNCmd=(whiptail
+        --backtitle "Setup PiVPN"
+        --title "Installation mode"
+        --separate-output
+        --radiolist "WireGuard is a new kind of VPN that provides \
+near-instantaneous connection speed, high performance, and modern cryptography.
+
+It's the recommended choice especially if you use mobile devices where \
+WireGuard is easier on battery than OpenVPN.
+
+OpenVPN is still available if you need the traditional, flexible, trusted \
+VPN protocol or if you need features like TCP and custom search domain.
+
+Choose a VPN (press space to select):" "${r}" "${c}" 2)
+      VPNChooseOptions=(WireGuard "" on
+        OpenVPN "" off)
+
+      if VPN="$("${chooseVPNCmd[@]}" \
+        "${VPNChooseOptions[@]}" \
+        2>&1 > /dev/tty)"; then
+        echo "::: Using VPN: ${VPN}"
+        VPN="${VPN,,}"
+      else
+        err "::: Cancel selected, exiting...."
+        exit 1
+      fi
+    elif [[ "${OPENVPN_SUPPORT}" -eq 1 ]] \
+      && [[ "${WIREGUARD_SUPPORT}" -eq 0 ]]; then
+      echo "::: Using VPN: OpenVPN"
+      VPN="openvpn"
+    elif [[ "${OPENVPN_SUPPORT}" -eq 0 ]] \
+      && [[ "${WIREGUARD_SUPPORT}" -eq 1 ]]; then
+      echo "::: Using VPN: WireGuard"
+      VPN="wireguard"
+    fi
+  fi
+
+  echo "VPN=${VPN}" >> "${tempsetupVarsFile}"
+}
+
+askAboutCustomizing() {
+  if [[ "${runUnattended}" == 'false' ]]; then
+    if whiptail \
+      --backtitle "Setup PiVPN" \
+      --title "Installation mode" \
+      --defaultno \
+      --yesno "PiVPN uses the following settings that we believe are good \
+defaults for most users. However, we still want to keep flexibility, so if \
+you need to customize them, choose Yes.
+
+* UDP or TCP protocol: UDP
+* Custom search domain for the DNS field: None
+* Modern features or best compatibility: Modern features \
+(256 bit certificate + additional TLS encryption)" "${r}" "${c}"; then
+      CUSTOMIZE=1
+    else
+      CUSTOMIZE=0
+    fi
+  fi
 }
 
 installOpenVPN() {
@@ -1893,7 +1987,7 @@ installWireGuard() {
 
     if [[ "${WIREGUARD_BUILTIN}" -eq 0 ]]; then
       # Explicitly install the module if not built-in
-      PIVPN_DEPS+=(linux-headers-arm64 wireguard-dkms)
+      PIVPN_DEPS+=(linux-headers-amd64 wireguard-dkms)
     fi
   elif [[ "${PLAT}" == "Ubuntu" ]]; then
     echo "..."
