@@ -150,6 +150,9 @@ main() {
 
   chooseInterface
 
+
+getStaticIPv4Settings
+
   setStaticIPv4
 
   #if checkStaticIpSupported; then
