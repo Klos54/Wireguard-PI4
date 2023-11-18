@@ -150,9 +150,9 @@ main() {
 
   chooseInterface
 
-getStaticIPv4Settings
+#getStaticIPv4Settings
 
-setStaticIPv4
+#setStaticIPv4
 
   #if checkStaticIpSupported; then
     #getStaticIPv4Settings
