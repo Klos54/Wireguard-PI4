@@ -11,7 +11,7 @@
 # Make sure you have `curl` installed
 
 ######## VARIABLES #########
-pivpnGitUrl="https://github.com/Klos54/Wireguard-PI4.git"
+pivpnGitUrl="https://github.com/pivpn/pivpn.git"
 # Uncomment to checkout a custom branch for local pivpn files
 #pivpnGitBranch="custombranchtocheckout"
 setupVarsFile="setupVars.conf"
@@ -150,21 +150,20 @@ main() {
 
   chooseInterface
 
-
 getStaticIPv4Settings
 
-  #setStaticIPv4
+setStaticIPv4
 
   #if checkStaticIpSupported; then
-  #  getStaticIPv4Settings
-#
-#    if [[ -z "${dhcpReserv}" ]] \
-#      || [[ "${dhcpReserv}" -ne 1 ]]; then
-#      setStaticIPv4
-#    fi
-#  else
-#    staticIpNotSupported
-#  fi
+    #getStaticIPv4Settings
+
+    #if [[ -z "${dhcpReserv}" ]] \
+    #  || [[ "${dhcpReserv}" -ne 1 ]]; then
+   #   setStaticIPv4
+    #fi
+  #e#lse
+  #  staticIpNotSupported
+  #fi
 
   chooseUser
   cloneOrUpdateRepos
@@ -346,10 +345,8 @@ distroCheck() {
   # distroCheck, maybeOSSupport, noOSSupport
   # if lsb_release command is on their system
   if command -v lsb_release > /dev/null; then
-    #PLAT="$(lsb_release -si)"
-    PLAT="Debian"
-    #OSCN="$(lsb_release -sc)"
-    OSCN="bullseye"
+    PLAT="$(lsb_release -si)"
+    OSCN="$(lsb_release -sc)"
   else # else get info from os-release
     . /etc/os-release
     PLAT="$(awk '{print $1}' <<< "${NAME}")"
@@ -583,7 +580,11 @@ preconfigurePackages() {
 
   # We set static IP only on Raspberry Pi OS
   if checkStaticIpSupported; then
-    BASE_DEPS+=(dhcpcd5)
+    if [[ "${OSCN}" != "bookworm" ]]; then
+      BASE_DEPS+=(dhcpcd5)
+    else
+      useNetworkManager=true
+    fi
   fi
 
   if [[ "${PKG_MANAGER}" == 'apt-get' ]]; then
@@ -1358,22 +1359,11 @@ If you are not sure, please just keep the default." "${r}" "${c}"
 }
 
 setDHCPCD() {
-  # Append these lines to dhcpcd.conf to enable a static IP
-  {
-    echo "interface ${IPv4dev}"
-    echo "static ip_address=${IPv4addr}"
-    echo "static routers=${IPv4gw}"
-    echo "static domain_name_servers=${IPv4dns}"
-  } | ${SUDO} tee -a "${dhcpcdFile}" > /dev/null
-}
-
-setStaticIPv4() {
-  # Tries to set the IPv4 address
   if [[ -f /etc/dhcpcd.conf ]]; then
     if grep -q "${IPv4addr}" "${dhcpcdFile}"; then
       echo "::: Static IP already configured."
     else
-      setDHCPCD
+      writeDHCPCDConf
       ${SUDO} ip addr replace dev "${IPv4dev}" "${IPv4addr}"
       echo ":::"
       echo -n "::: Setting IP to ${IPv4addr}.  "
@@ -1383,6 +1373,40 @@ setStaticIPv4() {
   else
     err "::: Critical: Unable to locate configuration file to set static IPv4 address!"
     exit 1
+  fi
+}
+
+writeDHCPCDConf() {
+  # Append these lines to dhcpcd.conf to enable a static IP
+  {
+    echo "interface ${IPv4dev}"
+    echo "static ip_address=${IPv4addr}"
+    echo "static routers=${IPv4gw}"
+    echo "static domain_name_servers=${IPv4dns}"
+  } | ${SUDO} tee -a "${dhcpcdFile}" > /dev/null
+
+}
+
+setNetworkManager() {
+  connectionUUID=$(nmcli -t con show --active \
+    | awk -v ref="${IPv4dev}" -F: 'match($0, ref){print $2}')
+
+  ${SUDO} nmcli con mod "${connectionUUID}" \
+    ipv4.addresses "${IPv4addr}" \
+    ipv4.gateway "${IPv4gw}" \
+    ipv4.dns "${IPv4dns}" \
+    ipv4.method "manual"
+}
+
+setStaticIPv4() {
+  # Tries to set the IPv4 address
+  if [[ -v useNetworkManager ]]; then
+    echo "::: Using Network manager"
+    setNetworkManager
+    echo "useNetworkManager=${useNetworkManager}" >> "${tempsetupVarsFile}"
+  else
+    echo "::: Using DHCPCD"
+    setDHCPCD
   fi
 }
 
@@ -1655,8 +1679,6 @@ installPiVPN() {
   ${SUDO} mkdir -p /etc/pivpn/
   askWhichVPN
   setVPNDefaultVars
-
-  VPN='wireguard'
 
   if [[ "${VPN}" == 'openvpn' ]]; then
     setOpenVPNDefaultVars
@@ -1994,7 +2016,7 @@ installWireGuard() {
 
     if [[ "${WIREGUARD_BUILTIN}" -eq 0 ]]; then
       # Explicitly install the module if not built-in
-      PIVPN_DEPS+=(linux-headers-arm64 wireguard-dkms)
+      PIVPN_DEPS+=(linux-headers-amd64 wireguard-dkms)
     fi
   elif [[ "${PLAT}" == "Ubuntu" ]]; then
     echo "..."
