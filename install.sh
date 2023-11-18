@@ -1680,15 +1680,18 @@ installPiVPN() {
   askWhichVPN
   setVPNDefaultVars
 
-  if [[ "${VPN}" == 'openvpn' ]]; then
-    setOpenVPNDefaultVars
-    askAboutCustomizing
-    installOpenVPN
-    askCustomProto
-  elif [[ "${VPN}" == 'wireguard' ]]; then
-    setWireguardDefaultVars
-    installWireGuard
-  fi
+  #if [[ "${VPN}" == 'openvpn' ]]; then
+  #  setOpenVPNDefaultVars
+  #  askAboutCustomizing
+  #  installOpenVPN
+  #  askCustomProto
+  #elif [[ "${VPN}" == 'wireguard' ]]; then
+  #  setWireguardDefaultVars
+  #  installWireGuard
+  #fi
+
+  setWireguardDefaultVars
+  installWireGuard
 
   askCustomPort
   askClientDNS
