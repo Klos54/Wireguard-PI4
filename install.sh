@@ -1678,6 +1678,7 @@ cloneOrUpdateRepos() {
 installPiVPN() {
   ${SUDO} mkdir -p /etc/pivpn/
   askWhichVPN
+"${VPN}" = 'wireguard' 
   setVPNDefaultVars
 
   #if [[ "${VPN}" == 'openvpn' ]]; then
