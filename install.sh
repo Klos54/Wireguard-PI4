@@ -1678,7 +1678,7 @@ cloneOrUpdateRepos() {
 installPiVPN() {
   ${SUDO} mkdir -p /etc/pivpn/
   askWhichVPN
-"${VPN}" = 'wireguard' 
+VPN = 'wireguard'
   setVPNDefaultVars
 
   #if [[ "${VPN}" == 'openvpn' ]]; then
@@ -1697,27 +1697,27 @@ installPiVPN() {
   askCustomPort
   askClientDNS
 
-  if [[ "${VPN}" == 'openvpn' ]]; then
-    askCustomDomain
-  fi
+  #if [[ "${VPN}" == 'openvpn' ]]; then
+  #  askCustomDomain
+  #fi
 
   askPublicIPOrDNS
 
-  if [[ "${VPN}" == 'openvpn' ]]; then
-    askEncryption
-    confOpenVPN
-    confOVPN
-  elif [[ "${VPN}" == 'wireguard' ]]; then
+  #if [[ "${VPN}" == 'openvpn' ]]; then
+  # askEncryption
+  #  confOpenVPN
+  #  confOVPN
+  #elif [[ "${VPN}" == 'wireguard' ]]; then
     confWireGuard
-  fi
+  #fi
 
   confNetwork
 
-  if [[ "${VPN}" == 'openvpn' ]]; then
-    confLogging
-  elif [[ "${VPN}" == 'wireguard' ]]; then
+  #if [[ "${VPN}" == 'openvpn' ]]; then
+  #  confLogging
+  #elif [[ "${VPN}" == 'wireguard' ]]; then
     writeWireguardTempVarsFile
-  fi
+  #fi
 
   writeVPNTempVarsFile
 }
